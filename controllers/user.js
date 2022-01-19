@@ -1,20 +1,27 @@
 const User = require('../models/userModel');
+const { Order } = require('../models/order');
 
-
-exports.signup = (req, res) => {
-    // console.log("req.body", req.body);
-    const user = new User(req.body);
-    user.save((err, user) => {
-        if (err) {
+exports.userById = (req, res, next, id) =>{
+    User.findById(id).exec((err, user)=>{
+        if(err || !user) {
             return res.status(400).json({
-                // error: errorHandler(err)
-                error: 'Email is taken'
+                error:'user not found'
             });
         }
-        // user.salt = undefined;
-        // user.hashed_password = undefined;
-        res.json({
-            user
+        req.profile = user;
+        next();
+    })
+}
+exports.purchaseHistory = (req, res) => {
+    Order.find({ user: req.profile._id })
+        .populate('user', '_id name')
+        .sort('-created')
+        .exec((err, orders) => {
+            if (err) {
+                return res.status(400).json({
+                    error: errorHandler(err)
+                });
+            }
+            res.json(orders);
         });
-    });
 };
